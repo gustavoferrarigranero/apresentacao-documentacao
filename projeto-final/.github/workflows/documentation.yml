@@ -1,0 +1,24 @@
+name: Documentation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+      - run: touch database/database.sqlite
+      - run: php artisan migrate:fresh --seed
+      - run: php artisan test --compact
+      - run: php artisan scramble:export --path=storage/app/openapi.json --fail-on-unknown
+      - run: test -s storage/app/openapi.json
+      - run: grep -q '"/orders"' storage/app/openapi.json
